@@ -222,10 +222,13 @@ class BuyingController(SubcontractingController):
 
 	def validate_from_warehouse(self):
 		for item in self.get("items"):
-			if item.get("from_warehouse") and (item.get("from_warehouse") == item.get("warehouse")):
-				frappe.throw(
-					_("Row #{0}: Accepted Warehouse and Supplier Warehouse cannot be same").format(item.idx)
-				)
+			if item.get("from_warehouse"):
+				if not self.get("is_internal_supplier"):
+					item.from_warehouse = None
+				elif item.get("from_warehouse") == item.get("warehouse"):
+					frappe.throw(
+						_("Row #{0}: Accepted Warehouse and Supplier Warehouse cannot be same").format(item.idx)
+					)
 
 			if item.get("from_warehouse") and self.get("is_subcontracted"):
 				frappe.throw(
