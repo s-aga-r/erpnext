@@ -2,29 +2,28 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Twitter Settings', {
-	onload: function(frm) {
+	onload: (frm) => {
 		if (frm.doc.session_status == 'Expired' && frm.doc.consumer_key && frm.doc.consumer_secret){
 			frappe.confirm(
 				__('Session not valid, Do you want to login?'),
-				function(){
-					frm.trigger("login");
+				() => {
+					frm.trigger('login');
 				},
-				function(){
-					window.close();
-				}
 			);
 		}
-		frm.dashboard.set_headline(__("For more information, {0}.", [`<a target='_blank' href='https://docs.erpnext.com/docs/user/manual/en/CRM/twitter-settings'>${__('click here')}</a>`]));
+		frm.dashboard.set_headline(__('For more information, {0}.', [`<a target='_blank' href='https://docs.erpnext.com/docs/user/manual/en/twitter-settings'>${__('click here')}</a>`]));
 	},
-	refresh: function(frm) {
+
+	refresh: (frm) => {
 		let msg, color, flag=false;
-		if (frm.doc.session_status == "Active") {
-			msg = __("Session Active");
+
+		if (frm.doc.session_status == 'Active') {
+			msg = __('Session Active');
 			color = 'green';
 			flag = true;
 		}
 		else if(frm.doc.consumer_key && frm.doc.consumer_secret) {
-			msg = __("Session Not Active. Save doc to login.");
+			msg = __('Session Not Active. Save doc to login.');
 			color = 'red';
 			flag = true;
 		}
@@ -39,21 +38,23 @@ frappe.ui.form.on('Twitter Settings', {
 			);
 		}
 	},
-	login: function(frm) {
+
+	login: (frm) => {
 		if (frm.doc.consumer_key && frm.doc.consumer_secret){
 			frappe.dom.freeze();
 			frappe.call({
 				doc: frm.doc,
-				method: "get_authorize_url",
-				callback : function(r) {
+				method: 'get_authorize_url',
+				callback : (r) => {
 					window.location.href = r.message;
 				}
-			}).fail(function() {
+			}).fail(() => {
 				frappe.dom.unfreeze();
 			});
 		}
 	},
-	after_save: function(frm) {
-		frm.trigger("login");
+
+	after_save: (frm) => {
+		frm.trigger('login');
 	}
 });

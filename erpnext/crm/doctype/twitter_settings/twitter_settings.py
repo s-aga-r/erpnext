@@ -43,7 +43,7 @@ class TwitterSettings(Document):
 			self.access_token = auth.access_token
 			self.access_token_secret = auth.access_token_secret
 			api = self.get_api()
-			user = api.me()
+			user = api.get_user()
 			profile_pic = (user._json["profile_image_url"]).replace("_normal", "")
 
 			frappe.db.set_value(
