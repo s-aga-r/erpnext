@@ -11,8 +11,13 @@ from frappe.model.document import Document
 from frappe.utils import get_url_to_form
 from frappe.utils.file_manager import get_file_path
 
+from erpnext.crm.doctype.twitter_settings.twitter_repository import TwitterRepository
+
 
 class TwitterSettings(Document):
+	def on_save(self):
+		tr = TwitterRepository(self.as_dict())
+
 	@frappe.whitelist()
 	def get_authorize_url(self):
 		callback_url = (
