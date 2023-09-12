@@ -69,7 +69,7 @@ class BOMUpdateLog(Document):
 
 		wip_log = frappe.get_all(
 			"BOM Update Log",
-			{"update_type": "Update Cost", "status": ["in", ["Queued", "In Progress"]]},
+			{"docstatus": 1, "update_type": "Update Cost", "status": ["in", ["Queued", "In Progress"]]},
 			limit_page_length=1,
 		)
 		if wip_log:
