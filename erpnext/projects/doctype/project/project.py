@@ -64,14 +64,31 @@ class Project(Document):
 
 			# create tasks from template
 			project_tasks = []
-			tmp_task_details = []
-			for task in template.tasks:
-				template_task_details = frappe.get_doc("Task", task.task)
-				tmp_task_details.append(template_task_details)
+
+			template_tasks_list = [task.task for task in template.tasks]
+			template_tasks_details = frappe.db.get_all(
+				"Task",
+				filters={"name": ["in", template_tasks_list]},
+				fields=[
+					"name",
+					"type",
+					"color",
+					"issue",
+					"start",
+					"subject",
+					"is_group",
+					"duration",
+					"description",
+					"task_weight",
+				],
+				order_by="creation",
+			)
+
+			for template_task_details in template_tasks_details:
 				task = self.create_task_from_template(template_task_details)
 				project_tasks.append(task)
 
-			self.dependency_mapping(tmp_task_details, project_tasks)
+			self.dependency_mapping(template_tasks_details, project_tasks)
 
 	def create_task_from_template(self, task_details):
 		return frappe.get_doc(
@@ -107,9 +124,38 @@ class Project(Document):
 			date = add_days(date, 1)
 		return date
 
+	def get_template_task_map(project_tasks):
+		template_task_list = [project_task.template_task for project_task in project_tasks]
+
+		parent_task_map = frappe._dict(
+			frappe.db.get_all(
+				"Task",
+				filters={"name": ["in", template_task_list]},
+				fields=["name", "parent_task"],
+				as_list=True,
+			)
+		)
+
+		child_task_map = {}
+		for d in frappe.db.get_all(
+			"Task Depends On",
+			filters={"parent": ["in", template_task_list]},
+			fields=["parent", "task"],
+			as_list=True,
+		):
+			child_task_map.setdefault(d[0], []).append(d[1])
+
+		template_task_map = {}
+		for template_task, parent_task in parent_task_map.items():
+			template_task_map.setdefault(template_task, frappe._dict()).update(
+				{"parent_task": parent_task, "depends_on": child_task_map.get(template_task)}
+			)
+
 	def dependency_mapping(self, template_tasks, project_tasks):
+		template_task_map = self.get_template_task_map(project_tasks)
+
 		for project_task in project_tasks:
-			template_task = frappe.get_doc("Task", project_task.template_task)
+			template_task = template_task_map.get(project_task.template_task)
 
 			self.check_depends_on_value(template_task, project_task, project_tasks)
 			self.check_for_parent_tasks(template_task, project_task, project_tasks)
@@ -119,9 +165,9 @@ class Project(Document):
 			project_template_map = {pt.template_task: pt for pt in project_tasks}
 
 			for child_task in template_task.get("depends_on"):
-				if project_template_map and project_template_map.get(child_task.task):
+				if project_template_map and project_template_map.get(child_task):
 					project_task.reload()  # reload, as it might have been updated in the previous iteration
-					project_task.append("depends_on", {"task": project_template_map.get(child_task.task).name})
+					project_task.append("depends_on", {"task": project_template_map.get(child_task).name})
 					project_task.save()
 
 	def check_for_parent_tasks(self, template_task, project_task, project_tasks):
