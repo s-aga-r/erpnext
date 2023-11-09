@@ -108,6 +108,7 @@ class TransactionDeletionRecord(Document):
 
 				if no_of_docs > 0:
 					self.delete_version_log(docfield["parent"], docfield["fieldname"])
+					self.delete_comments(docfield["parent"], docfield["fieldname"])
 					self.delete_communications(docfield["parent"], docfield["fieldname"])
 					self.populate_doctypes_table(tables, docfield["parent"], no_of_docs)
 
@@ -209,6 +210,18 @@ class TransactionDeletionRecord(Document):
 
 		for batch in create_batch(communication_names, self.batch_size):
 			frappe.delete_doc("Communication", batch, ignore_permissions=True)
+
+	def delete_comments(self, doctype, company_fieldname):
+		dt = qb.DocType(doctype)
+		names = qb.from_(dt).select(dt.name).where(dt[company_fieldname] == self.company).run(as_list=1)
+		names = [x[0] for x in names]
+
+		if names:
+			comments = qb.DocType("Comment")
+			for batch in create_batch(names, self.batch_size):
+				qb.from_(comments).delete().where(
+					(comments.reference_doctype == doctype) & (comments.reference_name.isin(batch))
+				).run()
 
 
 @frappe.whitelist()
