@@ -386,6 +386,10 @@ frappe.ui.form.on("BOM", {
 		if (in_list(["Valuation Rate", "Last Purchase Rate"], frm.doc.rm_cost_as_per)) {
 			frm.set_value("plc_conversion_rate", 1.0);
 		}
+
+		frm.fields_dict.items.grid.update_docfield_property(
+			'rate', 'read_only', frm.doc.rm_cost_as_per == "Manual" ? 0 : 1
+		);
 	},
 
 	routing(frm) {
