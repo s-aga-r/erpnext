@@ -8,6 +8,10 @@ from frappe.query_builder import Case, Order
 from frappe.query_builder.functions import Coalesce, CombineDatetime, Sum
 from frappe.utils import flt
 
+from erpnext.manufacturing.doctype.production_plan.production_plan import (
+	get_reserved_qty_for_production_plan,
+)
+
 
 class Bin(Document):
 	# begin: auto-generated types
@@ -55,9 +59,6 @@ class Bin(Document):
 	def update_reserved_qty_for_production_plan(self, skip_project_qty_update=False):
 		"""Update qty reserved for production from Production Plan tables
 		in open production plan"""
-		from erpnext.manufacturing.doctype.production_plan.production_plan import (
-			get_reserved_qty_for_production_plan,
-		)
 
 		reserved_qty_for_production_plan = get_reserved_qty_for_production_plan(
 			self.item_code, self.warehouse
