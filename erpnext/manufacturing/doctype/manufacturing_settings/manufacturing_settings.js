@@ -6,11 +6,6 @@ frappe.ui.form.on('Manufacturing Settings', {
 
 frappe.tour["Manufacturing Settings"] = [
 	{
-		fieldname: "material_consumption",
-		title: __("Allow Multiple Material Consumption"),
-		description: __("If ticked, multiple materials can be used for a single Work Order. This is useful if one or more time consuming products are being manufactured.")
-	},
-	{
 		fieldname: "backflush_raw_materials_based_on",
 		title: __("Backflush Raw Materials"),
 		description: __("The Stock Entry of type 'Manufacture' is known as backflush. Raw materials being consumed to manufacture finished goods is known as backflushing. <br><br> When creating Manufacture Entry, raw-material items are backflushed based on BOM of production item. If you want raw-material items to be backflushed based on Material Transfer entry made against that Work Order instead, then you can set it under this field.")

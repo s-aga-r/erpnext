@@ -596,29 +596,6 @@ erpnext.work_order = {
 			}
 
 			if (frm.doc.status != 'Stopped') {
-				// If "Material Consumption is check in Manufacturing Settings, allow Material Consumption
-				if (frm.doc.__onload && frm.doc.__onload.material_consumption == 1) {
-					if (flt(doc.material_transferred_for_manufacturing) > 0 || frm.doc.skip_transfer) {
-						// Only show "Material Consumption" when required_qty > consumed_qty
-						var counter = 0;
-						var tbl = frm.doc.required_items || [];
-						var tbl_lenght = tbl.length;
-						for (var i = 0, len = tbl_lenght; i < len; i++) {
-							let wo_item_qty = frm.doc.required_items[i].transferred_qty || frm.doc.required_items[i].required_qty;
-							if (flt(wo_item_qty) > flt(frm.doc.required_items[i].consumed_qty)) {
-								counter += 1;
-							}
-						}
-						if (counter > 0) {
-							var consumption_btn = frm.add_custom_button(__('Material Consumption'), function() {
-								const backflush_raw_materials_based_on = frm.doc.__onload.backflush_raw_materials_based_on;
-								erpnext.work_order.make_consumption_se(frm, backflush_raw_materials_based_on);
-							});
-							consumption_btn.addClass('btn-primary');
-						}
-					}
-				}
-
 				if(!frm.doc.skip_transfer){
 					if (flt(doc.material_transferred_for_manufacturing) > 0) {
 						if ((flt(doc.produced_qty) < flt(doc.material_transferred_for_manufacturing))) {
@@ -753,31 +730,6 @@ erpnext.work_order = {
 				frappe.model.sync(pick_list);
 				frappe.set_route('Form', pick_list.doctype, pick_list.name);
 			});
-	},
-
-	make_consumption_se: function(frm, backflush_raw_materials_based_on) {
-		let max = 0;
-		if(!frm.doc.skip_transfer){
-			max = (backflush_raw_materials_based_on === "Material Transferred for Manufacture") ?
-				flt(frm.doc.material_transferred_for_manufacturing) - flt(frm.doc.produced_qty) :
-				flt(frm.doc.qty) - flt(frm.doc.produced_qty);
-				// flt(frm.doc.qty) - flt(frm.doc.material_transferred_for_manufacturing);
-		} else {
-			max = flt(frm.doc.qty) - flt(frm.doc.produced_qty);
-		}
-
-		frappe.call({
-			method:"erpnext.manufacturing.doctype.work_order.work_order.make_stock_entry",
-			args: {
-				"work_order_id": frm.doc.name,
-				"purpose": "Material Consumption for Manufacture",
-				"qty": max
-			},
-			callback: function(r) {
-				var doclist = frappe.model.sync(r.message);
-				frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
-			}
-		});
 	},
 
 	change_work_order_status: function(frm, status) {

@@ -28,7 +28,6 @@ class ManufacturingSettings(Document):
 		disable_capacity_planning: DF.Check
 		job_card_excess_transfer: DF.Check
 		make_serial_no_batch_from_work_order: DF.Check
-		material_consumption: DF.Check
 		mins_between_operations: DF.Int
 		overproduction_percentage_for_sales_order: DF.Percent
 		overproduction_percentage_for_work_order: DF.Percent
@@ -44,13 +43,3 @@ def get_mins_between_operations():
 		minutes=cint(frappe.db.get_single_value("Manufacturing Settings", "mins_between_operations"))
 		or 10
 	)
-
-
-@frappe.whitelist()
-def is_material_consumption_enabled():
-	if not hasattr(frappe.local, "material_consumption"):
-		frappe.local.material_consumption = cint(
-			frappe.db.get_single_value("Manufacturing Settings", "material_consumption")
-		)
-
-	return frappe.local.material_consumption

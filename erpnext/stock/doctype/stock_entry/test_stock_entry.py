@@ -861,65 +861,6 @@ class TestStockEntry(FrappeTestCase):
 			fg_cost, flt(rm_cost + bom_operation_cost + work_order.additional_operating_cost, 2)
 		)
 
-	@change_settings("Manufacturing Settings", {"material_consumption": 1})
-	def test_work_order_manufacture_with_material_consumption(self):
-		from erpnext.manufacturing.doctype.work_order.work_order import (
-			make_stock_entry as _make_stock_entry,
-		)
-
-		bom_no = frappe.db.get_value("BOM", {"item": "_Test FG Item", "is_default": 1, "docstatus": 1})
-
-		work_order = frappe.new_doc("Work Order")
-		work_order.update(
-			{
-				"company": "_Test Company",
-				"fg_warehouse": "_Test Warehouse 1 - _TC",
-				"production_item": "_Test FG Item",
-				"bom_no": bom_no,
-				"qty": 1.0,
-				"stock_uom": "_Test UOM",
-				"wip_warehouse": "_Test Warehouse - _TC",
-			}
-		)
-		work_order.insert()
-		work_order.submit()
-
-		make_stock_entry(item_code="_Test Item", target="Stores - _TC", qty=10, basic_rate=5000.0)
-		make_stock_entry(
-			item_code="_Test Item Home Desktop 100", target="Stores - _TC", qty=10, basic_rate=1000.0
-		)
-
-		s = frappe.get_doc(_make_stock_entry(work_order.name, "Material Transfer for Manufacture", 1))
-		for d in s.get("items"):
-			d.s_warehouse = "Stores - _TC"
-		s.insert()
-		s.submit()
-
-		# When Stock Entry has RM and FG
-		s = frappe.get_doc(_make_stock_entry(work_order.name, "Manufacture", 1))
-		s.save()
-		rm_cost = 0
-		for d in s.get("items"):
-			if d.s_warehouse:
-				rm_cost += d.amount
-		fg_cost = list(filter(lambda x: x.item_code == "_Test FG Item", s.get("items")))[0].amount
-		scrap_cost = list(filter(lambda x: x.is_scrap_item, s.get("items")))[0].amount
-		self.assertEqual(fg_cost, flt(rm_cost - scrap_cost, 2))
-
-		# When Stock Entry has only FG + Scrap
-		s.items.pop(0)
-		s.items.pop(0)
-		s.submit()
-
-		rm_cost = 0
-		for d in s.get("items"):
-			if d.s_warehouse:
-				rm_cost += d.amount
-		self.assertEqual(rm_cost, 0)
-		expected_fg_cost = s.get_basic_rate_for_manufactured_item(1)
-		fg_cost = list(filter(lambda x: x.item_code == "_Test FG Item", s.get("items")))[0].amount
-		self.assertEqual(flt(fg_cost, 2), flt(expected_fg_cost, 2))
-
 	def test_variant_work_order(self):
 		bom_no = frappe.db.get_value(
 			"BOM", {"item": "_Test Variant Item", "is_default": 1, "docstatus": 1}

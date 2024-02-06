@@ -710,45 +710,7 @@ class TestWorkOrder(FrappeTestCase):
 
 		frappe.db.set_single_value("Manufacturing Settings", "make_serial_no_batch_from_work_order", 0)
 
-	def test_partial_material_consumption(self):
-		frappe.db.set_single_value("Manufacturing Settings", "material_consumption", 1)
-		wo_order = make_wo_order_test_record(planned_start_date=now(), qty=4)
-
-		ste_cancel_list = []
-		ste1 = test_stock_entry.make_stock_entry(
-			item_code="_Test Item", target="_Test Warehouse - _TC", qty=20, basic_rate=5000.0
-		)
-		ste2 = test_stock_entry.make_stock_entry(
-			item_code="_Test Item Home Desktop 100",
-			target="_Test Warehouse - _TC",
-			qty=20,
-			basic_rate=1000.0,
-		)
-
-		ste_cancel_list.extend([ste1, ste2])
-
-		s = frappe.get_doc(make_stock_entry(wo_order.name, "Material Transfer for Manufacture", 4))
-		s.submit()
-		ste_cancel_list.append(s)
-
-		ste1 = frappe.get_doc(make_stock_entry(wo_order.name, "Manufacture", 2))
-		ste1.submit()
-		ste_cancel_list.append(ste1)
-
-		ste3 = frappe.get_doc(make_stock_entry(wo_order.name, "Material Consumption for Manufacture", 2))
-		self.assertEqual(ste3.fg_completed_qty, 2)
-
-		expected_qty = {"_Test Item": 2, "_Test Item Home Desktop 100": 4}
-		for row in ste3.items:
-			self.assertEqual(row.qty, expected_qty.get(row.item_code))
-		ste_cancel_list.reverse()
-		for ste_doc in ste_cancel_list:
-			ste_doc.cancel()
-
-		frappe.db.set_single_value("Manufacturing Settings", "material_consumption", 0)
-
 	def test_extra_material_transfer(self):
-		frappe.db.set_single_value("Manufacturing Settings", "material_consumption", 0)
 		frappe.db.set_single_value(
 			"Manufacturing Settings",
 			"backflush_raw_materials_based_on",
