@@ -68,6 +68,10 @@ class StockReconciliation(StockController):
 			)
 		if not self.cost_center:
 			self.cost_center = frappe.get_cached_value("Company", self.company, "cost_center")
+
+		if self.purpose == "Opening Stock":
+			self.period_closing_voucher()
+
 		self.validate_posting_time()
 		self.set_current_serial_and_batch_bundle()
 		self.set_new_serial_and_batch_bundle()
@@ -97,6 +101,12 @@ class StockReconciliation(StockController):
 							"Row #{0}: You cannot use the inventory dimension '{1}' in Stock Reconciliation to modify the quantity or valuation rate. Stock reconciliation with inventory dimensions is intended solely for performing opening entries."
 						).format(row.idx, bold(dimension.get("doctype")))
 					)
+
+	def period_closing_voucher(self):
+		if frappe.db.exists("Period Closing Voucher", {"docstatus": 1, "company": self.company}):
+			frappe.throw(
+				_("Opening Entry can not be created after Period Closing Voucher is created."),
+			)
 
 	def on_submit(self):
 		self.make_bundle_for_current_qty()
